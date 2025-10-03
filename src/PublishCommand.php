@@ -14,7 +14,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class PublishCommand extends Command
 {
-    protected static $defaultName = 'publish';
+    protected static ?string $defaultName = 'publish';
 
     private bool $noOp = true;
     private bool $stopOnError = true;
@@ -22,12 +22,13 @@ class PublishCommand extends Command
     private string $targetPromptsDir = '';
     private string $targetEnvFile = '';
 
-    private Output $output;
-    private Filesystem $filesystem;
-    private EnvFile $envFile;
+    private ?Output $output = null;
+    private ?Filesystem $filesystem = null;
+    private ?EnvFile $envFile = null;
 
+    #[\Override]
     protected function configure(): void {
-        $this->setName(self::$defaultName)
+        $this->setName(self::$defaultName ?? 'publish')
             ->setDescription('Publishes or updates assets for the Instructor library.')
             ->addOption('target-config-dir', 'c', InputOption::VALUE_REQUIRED, 'Target directory for configuration files')
             ->addOption('target-prompts-dir', 'p', InputOption::VALUE_REQUIRED, 'Target directory for prompt files')
@@ -36,6 +37,7 @@ class PublishCommand extends Command
             ->addOption('no-op', 'no', InputOption::VALUE_NONE, 'Do not perform any actions, only log what would be done');
     }
 
+    #[\Override]
     protected function initialize(InputInterface $input, OutputInterface $output): void {
         $this->noOp = (bool)$input->getOption('no-op');
         $this->stopOnError = !$this->noOp;
@@ -50,7 +52,12 @@ class PublishCommand extends Command
         }
     }
 
+    #[\Override]
     protected function execute(InputInterface $input, OutputInterface $output): int {
+        assert($this->output !== null);
+        assert($this->filesystem !== null);
+        assert($this->envFile !== null);
+
         $this->output->out("");
         $this->output->out("<white>{$this->getApplication()?->getName()}</white> v{$this->getApplication()?->getVersion()}");
 
@@ -91,6 +98,8 @@ class PublishCommand extends Command
     }
 
     private function handleError(string $context, Exception $e): void {
+        assert($this->output !== null);
+
         $this->output->out(" <gray>...</gray> <yellow>(!)</yellow> <red>Error in</red> $context: " . $e->getMessage(), 'error');
 
         if ($this->stopOnError) {
@@ -103,6 +112,10 @@ class PublishCommand extends Command
     }
 
     private function getAssets(InputInterface $input) : array {
+        assert($this->filesystem !== null);
+        assert($this->output !== null);
+        assert($this->envFile !== null);
+
         $assets = [];
         if ($input->getOption('target-config-dir')) {
             $assets[] = new ConfigurationsDirAsset(

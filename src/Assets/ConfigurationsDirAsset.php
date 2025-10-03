@@ -31,6 +31,7 @@ class ConfigurationsDirAsset implements Publishable
         $this->output = $output;
     }
 
+    #[\Override]
     public function publish(): bool {
         if ($this->filesystem->exists($this->destinationPath)) {
             $this->output->out(
@@ -57,7 +58,7 @@ class ConfigurationsDirAsset implements Publishable
             return true;
         }
 
-        if ($this->filesystem->exists($this->destinationPath)) {
+        if ($result === Filesystem::RESULT_OK) {
             $this->output->out("Published configurations from {$this->sourcePath} to {$this->destinationPath}");
             return true;
         }
